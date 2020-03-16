@@ -1,12 +1,15 @@
 // библиотека для работы с датчиками MQ (Troyka-модуль)
 #include <TroykaMQ.h>
 #include <TroykaMeteoSensor.h>
+#include <GPRS_Shield_Arduino.h>
  
 // MARK: - Defines
 #define PIN_MQ135     A0
 #define PERIOD_MQ135  1000
 #define PERIOD_METEO  5000
 
+#define HEAD_SERIAL   "SERIAL"
+#define HEAD_GPRS     "GPRS"
 #define HEAD_MQ135    "MQ135"
 #define HEAD_METEO    "METEO"
 
@@ -15,6 +18,7 @@ String *output;
 unsigned long memTime_MQ135;
 unsigned long memTime_Meteo;
 MQ135 mq135(PIN_MQ135);
+GPRS gprs(Serial1);
 TroykaMeteoSensor meteoSensor;
 
 // - Outputs
@@ -24,6 +28,7 @@ void printBody(String str);
  
 void setup() {
   initialCOM();
+  initialGPRS();
   initialMQ135();
   initialMeteo();
 }
@@ -34,10 +39,28 @@ void loop() {
 
 // - Initial
 void initialCOM() {
-  delay(1000);
   Serial.begin(9600);
-  Serial.println("|Serial->Initialization is over!|");
-  delay(1000);
+  while (!Serial) { }
+  printHeader(HEAD_SERIAL);
+  printBody("Serial init success!");
+  printOver();
+}
+
+void initialGPRS() {
+  Serial1.begin(9600);
+  gprs.powerOn();
+  // проверяем есть ли связь с GPRS устройством
+  while (!gprs.init()) {
+    printHeader(HEAD_GPRS);
+    printBody("GPRS init error ...");
+    printOver();
+    delay(3000);
+  }
+
+  // выводим сообщение об удачной инициализации GPRS Shield
+  printHeader(HEAD_GPRS);
+  printBody("GPRS init success!");
+  printOver();
 }
 
 void initialMQ135() {
